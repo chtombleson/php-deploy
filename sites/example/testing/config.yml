@@ -1,0 +1,23 @@
+version_control:
+    type: "git"
+    url: "git repo"
+
+install:
+    dir: "directory to install site into"
+
+webserver:
+    type: "nginx"
+    servername: "domain name for site"
+
+dependency_manager:
+    type: "composer"
+
+database:
+    type: "postgresql"
+    name: "db name"
+    username: "db user"
+    password: "db password"
+
+hooks:
+    after_git_cmd: "shell cmd"
+    after_nginx_parse_conf_cmd: "shell cmd"
