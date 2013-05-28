@@ -90,7 +90,7 @@ class Nginx {
         $write = file_put_contents('/etc/nginx/sites-available/' . $this->site . '-' . $this->env . '.conf', $config);
 
         if ($write === false) {
-            throw new \Exception("Unable to write nginx conf to: sites/" . $this->site . "/" . $this->env . "/" . $this->site . "-" . $this->env . ".conf");
+            throw new \Exception("Unable to write nginx conf to: /etc/nginx/sites-available/" . $this->site . "/" . $this->env . "/" . $this->site . "-" . $this->env . ".conf");
         }
     }
 }

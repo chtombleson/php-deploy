@@ -6,7 +6,7 @@ install:
     dir: "directory to install site into"
 
 webserver:
-    type: "nginx"
+    type: "nginx | apache"
     servername: "domain name for site"
 
 dependency_manager:
@@ -20,4 +20,5 @@ database:
 
 hooks:
     after_git_cmd: "shell cmd"
-    after_nginx_parse_conf_cmd: "shell cmd"
+    after_nginx_parse_conf_cmd: "shell cmd" #For nginx
+    after_apache_parse_conf_cmd: "shell cmd" #For apache
