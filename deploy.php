@@ -9,7 +9,7 @@ spl_autoload_register(function($class) {
 });
 
 if ($argc < 2) {
-    echo "Useage: " . $argv[0] . " --site [site name] --environment [test|prod]\n";
+    echo "Usage: " . $argv[0] . " --site [site name] --environment [test|prod]\n";
     echo "Options:\n";
     echo "\t--help, -h: Show this message\n";
     echo "\t--site, -site: Name of site to deploy\n";

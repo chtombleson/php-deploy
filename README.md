@@ -20,7 +20,7 @@ Currently there is support for Git, Composer, Nginx, Apache and PostgreSQL with 
     $cd php-deploy
     $composer install
 
-## Useage
+## Usage
     $cd php-deploy
     $php deploy.php -site [sitename] -env [environment]
     $php deploy.php --help
