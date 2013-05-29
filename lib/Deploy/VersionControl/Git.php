@@ -43,11 +43,8 @@ class Git {
         if (isset($this->config->hooks->after_git_cmd)) {
             $color = new \Colors\Color();
             echo $color("Executing Hook, after_git_cmd: " . $this->config->hooks->after_git_cmd)->white->bold->bg_yellow . "\n";
-            exec(escapeshellcmd($this->config->hooks->after_git_cmd), $output);
-
-            foreach ($output as $line) {
-                echo $line . "\n";
-            }
+            $cmd = new \Deploy\Command();
+            $cmd->run($this->config->hooks->after_git_cmd);
         }
     }
 
@@ -126,23 +123,21 @@ class Git {
         $color = new \Colors\Color();
         echo $color("Creating Git Archive")->white->bold->bg_yellow . "\n";
         $this->time = time();
-        $command = 'bin/git-archive.sh /tmp/deployments/%s-%s %d %s/releases/%s.tar %s';
-        $cmd = sprintf($command, $this->site, $this->env, $this->time, $this->config->install->dir, $this->site, $this->branch);
+        //$cmd = 'git archive --format tar --prefix %d/ %s --output %s/releases/%s.tar.gz';
+        $cmd = 'git archive --format tar --prefix %d/ %s | gzip > %s/releases/%s.tar.gz';
+        $cmd = sprintf($cmd, $this->time, $this->branch, $this->config->install->dir, $this->site);
         echo "Running command: " . $cmd . "\n";
-        exec(escapeshellcmd($cmd)) . "\n";
+        $command = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env . '/');
+        $command->run($cmd);
     }
 
     private function untar() {
         $color = new \Colors\Color();
         echo $color("Extracting Git Archive")->white->bold->bg_yellow . "\n";
-        $command = 'bin/untar.sh %s/releases %s.tar';
-        $cmd = sprintf($command, $this->config->install->dir, $this->site);
-        echo "Running command: " . $cmd . "\n";
-        exec(escapeshellcmd($cmd), $output);
-
-        foreach ($output as $line) {
-            echo $line . "\n";
-        }
+        echo "Running command: tar -xvf " . $this->site . ".tar.gz\n";
+        $cmd = new \Deploy\Command($this->config->install->dir . '/releases/');
+        $cmd->run('tar -xvf ' . $this->site . '.tar.gz');
+        $cmd->run('rm ' . $this->site . '.tar.gz');
     }
 
     private function setCurrent() {

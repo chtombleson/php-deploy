@@ -1,7 +1,7 @@
 #!/bin/bash
-TARDIR=$1;
-TARNAME=$2;
+TARDIR=$1
+TARNAME=$2
 
-cd $TARDIR;
-tar -xvf $TARNAME;
-rm $TARNAME;
+cd $TARDIR
+tar -xvf $TARNAME
+rm $TARNAME
