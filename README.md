@@ -13,7 +13,7 @@ For an example configuration look at the example in the sites/ directory.
 Each environment has it's own config.yml file and a template of the web server configuration.
 
 ## What does this tool support
-Currently there is support for Git, Composer, Nginx, Apache and PostgreSQL with more to come.
+Currently there is support for Git, Composer, Nginx, Apache, PostgreSQL and MySQL with more to come.
 
 ## Installation
     $git clone https://github.com/chtombleson/php-deploy.git

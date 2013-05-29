@@ -13,7 +13,7 @@ dependency_manager:
     type: "composer"
 
 database:
-    type: "postgresql"
+    type: "postgresql | mysql"
     name: "db name"
     username: "db user"
     password: "db password"
