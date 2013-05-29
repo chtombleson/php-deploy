@@ -21,9 +21,25 @@ class Composer {
             throw new \Exception("Unable to find composer.json in: " . $this->config->install->dir . "/current");
         }
 
-        echo "Running command: composer install\n";
-        $cmd = new \Deploy\Command($this->config->install->dir . '/current/');
-        $cmd->run('composer install');
+        if (!file_exists($this->config->install->dir . '/vendor')) {
+            if (!mkdir($this->config->install->dir . '/vendor', 0755)) {
+                throw new \Exception("Unable to create vendors directory");
+            }
+        }
+
+        if (!symlink($this->config->install->dir . '/vendor', $this->config->install->dir . '/current/vendor')) {
+            throw new \Exception("Unable to symlink vendors directory to current");
+        }
+
+        if (file_exists($this->config->install->dir . '/current/composer.lock')) {
+            echo "Running command: composer update\n";
+            $cmd = new \Deploy\Command($this->config->install->dir . '/current/');
+            $cmd->run('composer update');
+        } else {
+            echo "Running command: composer install\n";
+            $cmd = new \Deploy\Command($this->config->install->dir . '/current/');
+            $cmd->run('composer install');
+        }
     }
 }
 ?>
