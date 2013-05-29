@@ -148,7 +148,8 @@ class Deployer {
             }
 
             echo "Removing: " . $remove . "\n";
-            exec(escapeshellcmd(sprintf('rm -r %s', $remove)));
+            $cmd = new \Deploy\Command();
+            $cmd->run('rm -r ' . $remove);
         }
     }
 }

@@ -28,11 +28,8 @@ class Nginx {
 
         if (isset($this->config->hooks->after_nginx_parse_conf_cmd) && !empty($this->config->hooks->after_nginx_parse_conf_cmd)) {
             echo $color("Executing Hook, after_nginx_parse_conf_cmd: " . $this->config->hooks->after_nginx_parse_conf_cmd)->white->bold->bg_yellow . "\n";
-            exec(escapeshellcmd($this->config->hooks->after_nginx_parse_conf_cmd), $output);
-
-            foreach ($output as $line) {
-                echo $line . "\n";
-            }
+            $cmd = new \Deploy\Command();
+            $cmd->run($this->config->hooks->after_nginx_parse_conf_cmd);
         }
 
         $msg  = "Symlinking /etc/nginx/sites-available/" . $this->site . "-" . $this->env . ".conf to ";
@@ -48,11 +45,8 @@ class Nginx {
         }
 
         echo $color("Reloading nginx")->white->bold->bg_yellow . "\n";
-        exec(escapeshellcmd('nginx -s reload'), $output);
-
-        foreach ($output as $line) {
-            echo  $line . "\n";
-        }
+        $cmd = new \Deploy\Command();
+        $cmd->run('nginx -s reload');
     }
 
     private function parseConf() {

@@ -28,13 +28,28 @@ class Postgresql {
     public function run() {
         $color = new \Colors\Color();
         echo $color("Setting up PostgreSQL Database")->white->bold->bg_yellow . "\n";
-        $cmd = sprintf('bin/postgresql.sh %s %s %s', $this->config->database->username, $this->config->database->password, $this->config->database->name);
-        echo "Running command: " . $cmd . "\n";
-        exec(escapeshellcmd($cmd), $output);
 
-        foreach ($output as $line) {
-            echo $line . "\n";
-        }
+        // Create User
+        $command = 'psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'%s\'" | grep -q 1 || psql template1 -c "CREATE USER %s WITH PASSWORD \'%s\'"';
+        $command = sprintf($command, $this->config->database->username, $this->config->database->username, $this->config->database->password);
+
+        echo "Running command: " . $command . "\n";
+        $cmd = new \Deploy\Command();
+        $cmd->run($command);
+
+        // Create Database
+        $command = 'psql template1 -t -c "SELECT 1 FROM pg_catalog.pg_database WHERE datname = \'%s\'" | grep -q 1 || psql template1 -t -c "CREATE DATABASE %s WITH OWNER %s"';
+        $command = sprintf($command, $this->config->database->name, $this->config->database->name, $this->config->database->username);
+
+        echo "Running command: " . $command . "\n";
+        $cmd->run($command);
+
+        // Grant Privilleges
+        $command = 'psql template1 -c "GRANT ALL PRIVILEGES ON DATABASE %s to %s"';
+        $command = sprintf($command, $this->config->database->name, $this->config->database->username);
+
+        echo "Running command: " . $command . "\n";
+        $cmd->run($command);
     }
 }
 ?>

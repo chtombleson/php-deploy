@@ -11,8 +11,8 @@ class Apache {
         $this->site = $site;
         $this->env = $env;
 
-        $nginx = exec('which apache2ctl');
-        if (empty($nginx)) {
+        $apache = exec('which apache2ctl');
+        if (empty($apache)) {
             throw new \Exception("Apache is not installed");
         }
 
@@ -28,11 +28,8 @@ class Apache {
 
         if (isset($this->config->hooks->after_apache_parse_conf_cmd) && !empty($this->config->hooks->after_apache_parse_conf_cmd)) {
             echo $color("Executing Hook, after_apache_parse_conf_cmd: " . $this->config->hooks->after_apache_parse_conf_cmd)->white->bold->bg_yellow . "\n";
-            exec(escapeshellcmd($this->config->hooks->after_apache_parse_conf_cmd), $output);
-
-            foreach ($output as $line) {
-                echo $line . "\n";
-            }
+            $cmd = new \Deploy\Commad();
+            $cmd->run($this->config->hooks->after_apache_parse_conf_cmd);
         }
 
         $msg  = "Symlinking /etc/apache2/sites-available/" . $this->site . "-" . $this->env . ".conf to ";
@@ -48,11 +45,8 @@ class Apache {
         }
 
         echo $color("Reloading apache")->white->bold->bg_yellow . "\n";
-        exec(escapeshellcmd('apache2ctl graceful'), $output);
-
-        foreach ($output as $line) {
-            echo  $line . "\n";
-        }
+        $cmd = new \Deploy\Command();
+        $cmd->run('apache2ctl graceful');
     }
 
     private function parseConf() {
