@@ -16,9 +16,7 @@ Each environment has it's own config.yml file and a template of the web server c
 Currently there is support for Git, Composer, Nginx, Apache, PostgreSQL and MySQL with more to come.
 
 ## Installation
-    $git clone https://github.com/chtombleson/php-deploy.git
-    $cd php-deploy
-    $composer install
+See INSTALL.md
 
 ## Usage
     $cd php-deploy

@@ -40,21 +40,21 @@ class Git {
         $this->untar();
         $this->setCurrent();
 
-        if (isset($this->config['hooks']['after_git_cmd'])) {
-            if (is_array($this->config['hooks']['after_git_cmd'])) {
+        if (isset($this->config['hooks']['after_git'])) {
+            if (is_array($this->config['hooks']['after_git'])) {
                 $color = new \Colors\Color();
-                echo $color("Executing Hook, after_git_cmd")->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_git")->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
 
-                foreach ($this->config['hooks']['after_git_cmd'] as $hook) {
+                foreach ($this->config['hooks']['after_git'] as $hook) {
                     echo "Running command: " . $hook . "\n";
                     $cmd->run($hook);
                 }
             } else {
                 $color = new \Colors\Color();
-                echo $color("Executing Hook, after_git_cmd: " . $this->config['hooks']['after_git_cmd'])->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_git: " . $this->config['hooks']['after_git'])->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
-                $cmd->run($this->config['hooks']['after_git_cmd']);
+                $cmd->run($this->config['hooks']['after_git']);
             }
         }
     }

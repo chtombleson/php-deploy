@@ -26,19 +26,19 @@ class Nginx {
         echo $color("Setting up Nginx")->white->bold->bg_yellow . "\n";
         $this->parseConf();
 
-        if (isset($this->config['hooks']['after_nginx_parse_conf_cmd']) && !empty($this->config['hooks']['after_nginx_parse_conf_cmd'])) {
-            if (is_array($this->config['hooks']['after_nginx_parse_conf_cmd'])) {
-                echo $color("Executing Hooks, after_nginx_parse_conf_cmd")->white->bold->bg_yellow . "\n";
+        if (isset($this->config['hooks']['after_nginx']) && !empty($this->config['hooks']['after_nginx'])) {
+            if (is_array($this->config['hooks']['after_nginx'])) {
+                echo $color("Executing Hooks, after_nginx")->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
 
-                foreach ($this->config['hooks']['after_nginx_parse_conf_cmd'] as $hook) {
+                foreach ($this->config['hooks']['after_nginx'] as $hook) {
                     echo "Running command: " . $hook . "\n";
                     $cmd->run($hook);
                 }
             } else {
-                echo $color("Executing Hook, after_nginx_parse_conf_cmd: " . $this->config['hooks']['after_nginx_parse_conf_cmd'])->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_nginx: " . $this->config['hooks']['after_nginx'])->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
-                $cmd->run($this->config['hooks']['after_nginx_parse_conf_cmd']);
+                $cmd->run($this->config['hooks']['after_nginx']);
             }
         }
 

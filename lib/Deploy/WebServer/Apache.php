@@ -26,19 +26,19 @@ class Apache {
         echo $color("Setting up Apache")->white->bold->bg_yellow . "\n";
         $this->parseConf();
 
-        if (isset($this->config['hooks']['after_apache_parse_conf_cmd']) && !empty($this->config['hooks']['after_apache_parse_conf_cmd'])) {
-            if (is_array($this->config['hooks']['after_apache_parse_conf_cmd'])) {
-                echo $color("Executing Hook, after_apache_parse_conf_cmd")->white->bold->bg_yellow . "\n";
+        if (isset($this->config['hooks']['after_apache']) && !empty($this->config['hooks']['after_apache'])) {
+            if (is_array($this->config['hooks']['after_apache'])) {
+                echo $color("Executing Hook, after_apache")->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
 
-                foreach ($this->config['hooks']['after_apache_parse_conf_cmd'] as $hook) {
+                foreach ($this->config['hooks']['after_apache'] as $hook) {
                     echo "Running command: " . $hook . "\n";
                     $cmd->run($hook);
                 }
             } else {
-                echo $color("Executing Hook, after_apache_parse_conf_cmd: " . $this->config['hooks']['after_apache_parse_conf_cmd'])->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_apache: " . $this->config['hooks']['after_apache'])->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Commad();
-                $cmd->run($this->config['hooks']['after_apache_parse_conf_cmd']);
+                $cmd->run($this->config['hooks']['after_apache']);
             }
         }
 

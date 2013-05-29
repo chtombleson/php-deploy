@@ -40,6 +40,22 @@ class Composer {
             $cmd = new \Deploy\Command($this->config['install']['dir'] . '/current/');
             $cmd->run('composer install');
         }
+
+        if (isset($this->config['hooks']['after_composer'])) {
+            if (is_array($this->config['hooks']['after_composer'])) {
+                echo $color("Executing Hooks, after_composer")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_composer'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                echo $color("Executing Hooks, after_composer: " . $this->config['hooks']['after_composer'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+                $cmd->run($this->config['hooks']['after_composer']);
+            }
+        }
     }
 }
 ?>
