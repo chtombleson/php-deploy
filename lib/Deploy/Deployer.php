@@ -5,12 +5,14 @@ class Deployer {
     protected $site;
     protected $env;
     protected $config;
+    protected $setup;
 
-    public function __construct($site, $env, $config = null) {
+    public function __construct($site, $env, $config = null, $setup = false) {
         $conf = new Config($site, $env, $config);
         $this->config = $conf->get();
         $this->site = $site;
         $this->env = $env;
+        $this->setup = $setup;
     }
 
     public function run() {
@@ -19,31 +21,31 @@ class Deployer {
 
         echo $color('Starting deployment of site: ' . $this->site . ', environment: ' . $this->env)->white->bold->bg_green . "\n";
         if ($cli->confirm('Are you sure you want to deploy this site [y/n]? ')) {
-            if (empty($this->config->version_control->type)) {
+            if (empty($this->config['version_control']['type'])) {
                 throw new \Exception("A version control type was not set in the config file");
             }
 
-            if (empty($this->config->install->dir)) {
+            if (empty($this->config['install']['dir'])) {
                 throw new \Exception("A install dir was not set in the config file");
             }
 
-            if (empty($this->config->webserver->type)) {
+            if (empty($this->config['webserver']['type'])) {
                 throw new \Exception("A webserver type was not set in the config file");
             }
 
-            if (!is_writeable(dirname($this->config->install->dir))) {
-                throw new \Exception(dirname($this->config->install->dir) . " is not writeable");
+            if (!is_writeable(dirname($this->config['install']['dir']))) {
+                throw new \Exception(dirname($this->config['install']['dir']) . " is not writeable");
             }
 
-            if (!file_exists($this->config->install->dir)) {
-                echo $color("Building install directory: " . $this->config->install->dir)->white->bold->bg_yellow . "\n";
+            if (!file_exists($this->config['install']['dir']) && $this->setup) {
+                echo $color("Building install directory: " . $this->config['install']['dir'])->white->bold->bg_yellow . "\n";
                 $this->buildInstallDir();
             }
 
             echo $color("Removing any old releases")->white->bold->bg_yellow . "\n";
             $this->cleanReleases();
 
-            $vcs_class = 'Deploy\VersionControl\\' . ucfirst($this->config->version_control->type);
+            $vcs_class = 'Deploy\VersionControl\\' . ucfirst($this->config['version_control']['type']);
 
             if (!file_exists('lib/' . str_replace('\\', '/', $vcs_class) . '.php')) {
                 throw new \Exception("Class: " . $vcs_class . " does not exist");
@@ -52,12 +54,12 @@ class Deployer {
             $vcs = new $vcs_class($this->config, $this->site, $this->env);
             $vcs->run();
 
-            if (isset($this->config->dependency_manager)) {
-                if (empty($this->config->dependency_manager->type)) {
+            if (isset($this->config['dependency_manager'])) {
+                if (empty($this->config['dependency_manager']['type'])) {
                     throw new \Exception("A dependy manager type is required");
                 }
 
-                $dep_class = 'Deploy\DependencyManager\\' . ucfirst($this->config->dependency_manager->type);
+                $dep_class = 'Deploy\DependencyManager\\' . ucfirst($this->config['dependency_manager']['type']);
 
                 if (!file_exists('lib/' . str_replace('\\', '/', $dep_class) . '.php')) {
                     throw new \Exception("Class: " . $dep_class . " does not exist");
@@ -67,12 +69,12 @@ class Deployer {
                 $dep->run();
             }
 
-            if (isset($this->config->database)) {
-                if (empty($this->config->database->type)) {
+            if (isset($this->config['database']) && $this->setup) {
+                if (empty($this->config['database']['type'])) {
                     throw new \Exception("Database type required");
                 }
 
-                $db_class = 'Deploy\Database\\' . ucfirst($this->config->database->type);
+                $db_class = 'Deploy\Database\\' . ucfirst($this->config['database']['type']);
 
                 if (!file_exists('lib/' . str_replace('\\', '/', $db_class) . '.php')) {
                     throw new \Exception("Class: " . $db_class . " does not exist");
@@ -82,14 +84,45 @@ class Deployer {
                 $db->run();
             }
 
-            $web_class = 'Deploy\WebServer\\' . ucfirst($this->config->webserver->type);
+            if ($this->setup) {
+                $web_class = 'Deploy\WebServer\\' . ucfirst($this->config['webserver']['type']);
 
-            if (!file_exists('lib/' . str_replace('\\', '/', $web_class) . '.php')) {
-                throw new \Exception("Class: " . $web_class . " does not exist");
+                if (!file_exists('lib/' . str_replace('\\', '/', $web_class) . '.php')) {
+                    throw new \Exception("Class: " . $web_class . " does not exist");
+                }
+
+                $web = new $web_class($this->config, $this->site, $this->env);
+                $web->run();
             }
 
-            $web = new $web_class($this->config, $this->site, $this->env);
-            $web->run();
+            switch (strtolower($this->config['webserver']['type'])) {
+                case 'nginx':
+                    echo $color("Reloading Nginx: nginx -s reload")->white->bold->bg_yellow . "\n";
+                    $cmd = new \Deploy\Command();
+                    $cmd->run('nginx -s reload');
+                    break;
+
+                case 'apache':
+                    echo $color("Reloading Apache: apache2ctl graceful")->white->bold->bg_yellow . "\n";
+                    $cmd = new \Deploy\Command();
+                    $cmd->run('apach2ctl graceful');
+                    break;
+            }
+
+            if (isset($this->config['hooks']['after_deploy']) && !empty($this->config['hooks']['after_deploy'])) {
+                if (is_array($this->config['hooks']['after_deploy'])) {
+                    echo $color("Executing after_deply hooks")->white->bold->bg_yellow . "\n";
+                    $cmd = new \Deploy\Command();
+
+                    foreach ($this->config['hooks']['after_deploy'] as $hook) {
+                        $cmd->run($hook);
+                    }
+                } else {
+                    echo $color("Executing after_deploy hook: " . $this->config['hooks']['after_deploy'])->white->bold->bg_yellow . "\n";
+                    $cmd = new \Deploy\Command();
+                    $cmd->run($this->config['hooks']['after_deploy']);
+                }
+            }
 
             echo $color('Finished deployment of site: ' . $this->site . ', environment: ' . $this->env)->white->bold->bg_green . "\n";
         } else {
@@ -102,12 +135,12 @@ class Deployer {
         $structure = array('log', 'releases');
         $chmod = 0755;
 
-        if (!mkdir($this->config->install->dir, $chmod)) {
-            throw new \Exception("Unable to create install dir " . $this->config->install->dir);
+        if (!mkdir($this->config['install']['dir'], $chmod)) {
+            throw new \Exception("Unable to create install dir " . $this->config['install']['dir']);
         }
 
         foreach ($structure as $struct) {
-            $base = realpath($this->config->install->dir);
+            $base = realpath($this->config['install']['dir']);
 
             if (!mkdir($base . '/' . $struct, $chmod)) {
                 throw new \Exception("Unbale to create " . $base . "/" . $struct . " dir");
@@ -116,14 +149,14 @@ class Deployer {
     }
 
     private function cleanReleases() {
-        $items = scandir($this->config->install->dir . '/releases/');
+        $items = scandir($this->config['install']['dir'] . '/releases/');
         unset($items[0]);
         unset($items[1]);
 
         $dirs = array();
         foreach ($items as $item) {
-            if (is_dir($this->config->install->dir . '/releases/' . $item)) {
-                $dirs[] = $this->config->install->dir . '/releases/' . $item;
+            if (is_dir($this->config['install']['dir'] . '/releases/' . $item)) {
+                $dirs[] = $this->config['install']['dir'] . '/releases/' . $item;
             }
         }
 

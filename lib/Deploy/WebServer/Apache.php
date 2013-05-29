@@ -16,7 +16,7 @@ class Apache {
             throw new \Exception("Apache is not installed");
         }
 
-        if (!isset($this->config->webserver->servername)) {
+        if (!isset($this->config['webserver']['servername'])) {
             throw new \Exception("Config for webserver requires servername");
         }
     }
@@ -26,10 +26,20 @@ class Apache {
         echo $color("Setting up Apache")->white->bold->bg_yellow . "\n";
         $this->parseConf();
 
-        if (isset($this->config->hooks->after_apache_parse_conf_cmd) && !empty($this->config->hooks->after_apache_parse_conf_cmd)) {
-            echo $color("Executing Hook, after_apache_parse_conf_cmd: " . $this->config->hooks->after_apache_parse_conf_cmd)->white->bold->bg_yellow . "\n";
-            $cmd = new \Deploy\Commad();
-            $cmd->run($this->config->hooks->after_apache_parse_conf_cmd);
+        if (isset($this->config['hooks']['after_apache_parse_conf_cmd']) && !empty($this->config['hooks']['after_apache_parse_conf_cmd'])) {
+            if (is_array($this->config['hooks']['after_apache_parse_conf_cmd'])) {
+                echo $color("Executing Hook, after_apache_parse_conf_cmd")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_apache_parse_conf_cmd'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                echo $color("Executing Hook, after_apache_parse_conf_cmd: " . $this->config['hooks']['after_apache_parse_conf_cmd'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Commad();
+                $cmd->run($this->config['hooks']['after_apache_parse_conf_cmd']);
+            }
         }
 
         $msg  = "Symlinking /etc/apache2/sites-available/" . $this->site . "-" . $this->env . ".conf to ";
@@ -50,8 +60,8 @@ class Apache {
     }
 
     private function parseConf() {
-        if (isset($this->config->webserver->conf)) {
-            $conf = $this->config->webserv->conf;
+        if (isset($this->config['webserver']['conf'])) {
+            $conf = $this->config['webserver']['conf'];
         } else {
             $conf = 'apache.conf';
         }
@@ -70,14 +80,14 @@ class Apache {
         $mcount = count($matches[0]);
         for ($i=0; $i < $mcount; $i++) {
             if ($matches[1][$i] == 'WEBROOT') {
-                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config->install->dir . '/current', $config);
+                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config['install']['dir'] . '/current', $config);
             } else {
                 $key = strtolower($matches[1][$i]);
-                if (!isset($this->config->webserver->{$key})) {
+                if (!isset($this->config['webserver'][$key])) {
                     throw new \Exception("No config data for apache config placeholder " . $matches[0][$i]);
                 }
 
-                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config->webserver->{$key}, $config);
+                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config['webserver'][$key], $config);
             }
         }
 

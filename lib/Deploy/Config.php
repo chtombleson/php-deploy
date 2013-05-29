@@ -53,11 +53,7 @@ class Config {
             throw new \Exception("Config requires webserver information");
         }
 
-        $this->config = $this->arrayToObj($yaml);
-    }
-
-    private function arrayToObj($array) {
-        return is_array($array) ? (object) array_map(array($this, __FUNCTION__), $array) : $array;
+        $this->config = $yaml;
     }
 }
 ?>

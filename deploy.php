@@ -40,7 +40,7 @@ if (!in_array($cli->get('-env'), $allowed_envs)) {
 }
 
 try {
-    $deployer = new Deploy\Deployer($cli->get('-site'), $cli->get('-env'), $cli->get('-config'));
+    $deployer = new Deploy\Deployer($cli->get('-site'), $cli->get('-env'), $cli->get('-config'), $cli->get('-setup'));
     $deployer->run();
 } catch (Exception $e) {
     echo $color("Error: " . $e->getMessage())->white->bold->bg_red . "\n";

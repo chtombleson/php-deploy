@@ -12,15 +12,15 @@ class Mysql {
             throw new \Exception("Please install MySQL");
         }
 
-        if (!isset($this->config->database->name)) {
+        if (!isset($this->config['database']['name'])) {
             throw new \Exception("Database requires a name");
         }
 
-        if (!isset($this->config->database->username)) {
+        if (!isset($this->config['database']['username'])) {
             throw new \Exception("Database requires a username");
         }
 
-        if (!isset($this->config->database->password)) {
+        if (!isset($this->config['database']['password'])) {
             throw new \Exception("Database requires a password");
         }
     }
@@ -35,7 +35,7 @@ class Mysql {
 
         // Create User
         $command = 'mysql -u %s --password=%s -e "SELECT 1 FROM mysql.user WHERE User=\'%s\'" | grep -q 1 || mysql -u %s --password=%s -e "CREATE USER %s IDENTIFIED BY \'%s\'';
-        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config->database->username, $mysqluser, $mysqlpass, $this->config->database->username, $this->config->database->password);
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['username'], $mysqluser, $mysqlpass, $this->config['database']['username'], $this->config['database']['password']);
 
         echo "Running command: " . $command . "\n";
         $cmd = new \Deploy\Command();
@@ -43,14 +43,14 @@ class Mysql {
 
         //Create Database
         $command = 'mysql -u %s --password=%s -e "SHOW DATABASES LIKE \'%s\'" | grep -q %s || mysql -u %s --password=%s -e "CREATE DATABASE %s"';
-        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config->database->name, $this->config->database->name, $mysqluser, $mysqlpass, $this->config->database->name);
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['name'], $this->config['database']['name'], $mysqluser, $mysqlpass, $this->config['database']['name']);
 
         echo "Running command: " . $command . "\n";
         $cmd->run($command);
 
         // Grant Privilliges
         $command = 'mysql -u %s --password=%s -e "GRANT ALL ON %s.* TO %s IDENTIFIED BY %s"';
-        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config->database->username, $this->config->database->name, $this->config->database->password);
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['username'], $this->config['database']['name'], $this->config['database']['password']);
 
         echo "Running command: " . $command . "\n";
         $cmd->run($command);

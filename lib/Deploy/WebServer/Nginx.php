@@ -16,7 +16,7 @@ class Nginx {
             throw new \Exception("Nginx is not installed");
         }
 
-        if (!isset($this->config->webserver->servername)) {
+        if (!isset($this->config['webserver']['servername'])) {
             throw new \Exception("Config for webserver requires servername");
         }
     }
@@ -26,10 +26,20 @@ class Nginx {
         echo $color("Setting up Nginx")->white->bold->bg_yellow . "\n";
         $this->parseConf();
 
-        if (isset($this->config->hooks->after_nginx_parse_conf_cmd) && !empty($this->config->hooks->after_nginx_parse_conf_cmd)) {
-            echo $color("Executing Hook, after_nginx_parse_conf_cmd: " . $this->config->hooks->after_nginx_parse_conf_cmd)->white->bold->bg_yellow . "\n";
-            $cmd = new \Deploy\Command();
-            $cmd->run($this->config->hooks->after_nginx_parse_conf_cmd);
+        if (isset($this->config['hooks']['after_nginx_parse_conf_cmd']) && !empty($this->config['hooks']['after_nginx_parse_conf_cmd'])) {
+            if (is_array($this->config['hooks']['after_nginx_parse_conf_cmd'])) {
+                echo $color("Executing Hooks, after_nginx_parse_conf_cmd")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_nginx_parse_conf_cmd'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                echo $color("Executing Hook, after_nginx_parse_conf_cmd: " . $this->config['hooks']['after_nginx_parse_conf_cmd'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+                $cmd->run($this->config['hooks']['after_nginx_parse_conf_cmd']);
+            }
         }
 
         $msg  = "Symlinking /etc/nginx/sites-available/" . $this->site . "-" . $this->env . ".conf to ";
@@ -50,8 +60,8 @@ class Nginx {
     }
 
     private function parseConf() {
-        if (isset($this->config->webserver->conf)) {
-            $conf = $this->config->webserv->conf;
+        if (isset($this->config['webserver']['conf'])) {
+            $conf = $this->config['webserver']['conf'];
         } else {
             $conf = 'nginx.conf';
         }
@@ -70,14 +80,14 @@ class Nginx {
         $mcount = count($matches[0]);
         for ($i=0; $i < $mcount; $i++) {
             if ($matches[1][$i] == 'WEBROOT') {
-                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config->install->dir . '/current', $config);
+                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config['install']['dir'] . '/current', $config);
             } else {
                 $key = strtolower($matches[1][$i]);
-                if (!isset($this->config->webserver->{$key})) {
+                if (!isset($this->config['webserver'][$key])) {
                     throw new \Exception("No config data for nginx config placeholder " . $matches[0][$i]);
                 }
 
-                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config->webserver->{$key}, $config);
+                $config = preg_replace('#' . preg_quote($matches[0][$i]) . '#', $this->config['webserver'][$key], $config);
             }
         }
 
