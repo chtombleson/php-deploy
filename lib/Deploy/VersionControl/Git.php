@@ -59,6 +59,51 @@ class Git {
         }
     }
 
+    public function rollback() {
+        $color = new \Colors\Color();
+        echo $color("Rolling back release")->white->bold->bg_yellow . "\n";
+
+        $currelease = readlink($this->config['install']['dir'] . '/current');
+        $releases = scandir($this->config['install']['dir'] . '/releases/');
+        unset($releases[0]);
+        unset($releases[1]);
+
+        sort($releases, SORT_NUMERIC);
+
+        if (count($releases) < 2) {
+            throw new \Exception("No other release to rollback to");
+        }
+
+        $newrelease = $this->config['install']['dir'] . '/releases/' . $releases[(count($releases) - 1) - 1];
+        echo "Rollback to " . $newrelease . "\n";
+
+        $cmd = new \Deploy\Command();
+        echo "Rolling back to previous release\n";
+        $cmd->run('rm ' . $this->config['install']['dir'] . '/current');
+        $cmd->run('ln -s ' . $newrelease . ' ' . $this->config['install']['dir'] . '/current');
+
+        echo "Removing rollbacked release\n";
+        $cmd->run('rm -r ' . $currelease);
+
+        if (isset($this->config['hooks']['after_git_rollback'])) {
+            if (is_array($this->config['hooks']['after_git_rollback'])) {
+                $color = new \Colors\Color();
+                echo $color("Executing Hook, after_git_rollback")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_git_rollback'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                $color = new \Colors\Color();
+                echo $color("Executing Hook, after_git_rollback: " . $this->config['hooks']['after_git_rollback'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+                $cmd->run($this->config['hooks']['after_git_rollback']);
+            }
+        }
+    }
+
     private function cloneRepo() {
         if (!file_exists('/tmp/deployments/')) {
             if (!mkdir('/tmp/deployments/', 0755)) {
@@ -156,7 +201,7 @@ class Git {
         echo $color("Symlinking release to current")->white->bold->bg_yellow . "\n";
 
         if (file_exists($this->config['install']['dir'] . '/current')) {
-            unlink($this->config->install->dir . '/current');
+            unlink($this->config['install']['dir'] . '/current');
         }
 
         if (!symlink($this->config['install']['dir'] . '/releases/' . $this->time, $this->config['install']['dir'] . '/current')) {

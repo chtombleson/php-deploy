@@ -59,6 +59,35 @@ class Nginx {
         $cmd->run('nginx -s reload');
     }
 
+    public function rollback() {
+        $color = new \Colors\Color();
+        echo $color("Rolling back Nginx")->white->bold->bg_yellow . "\n";
+
+        echo "Rolling back Nginx config\n";
+        $cmd = new \Deploy\Command();
+        $cmd->run('rm /etc/nginx/sites-enabled/' . $this->site . '-' . $this->env . '.conf');
+        $cmd->run('rm /etc/nginx/sites-available/' . $this->site . '-' . $this->env . '.conf');
+
+        echo "Reloading Nginx\n";
+        $cmd->run('nginx -s reload');
+
+        if (isset($this->config['hooks']['after_nginx_rollback']) && !empty($this->config['hooks']['after_nginx_rollback'])) {
+            if (is_array($this->config['hooks']['after_nginx_rollback'])) {
+                echo $color("Executing Hooks, after_nginx_rollback")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_nginx_rollback'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                echo $color("Executing Hook, after_nginx_rollback: " . $this->config['hooks']['after_nginx_rollback'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+                $cmd->run($this->config['hooks']['after_nginx_rollback']);
+            }
+        }
+    }
+
     private function parseConf() {
         if (isset($this->config['webserver']['conf'])) {
             $conf = $this->config['webserver']['conf'];

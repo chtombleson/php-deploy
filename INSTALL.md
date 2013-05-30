@@ -5,6 +5,7 @@
 3. Get PHP-Deploy from github
 4. Configuring a site for deployment
 5. How to deploy a site
+6. How to rollback a site
 
 ## Requirements
  * PHP 5.3+
@@ -99,3 +100,15 @@ Updating a site is also just as simple
 The only difference between the two command is the -setup option which is needed to setup a site for the first time.
 
 The -setup option run everything creating the web directory structure, getting the first release, setting up the webserver conf, database and install any dependencies. On an update it only creates a new release, updates any dependencies.
+
+## How to rollback a site
+Rolling back a site to a previous release is straight forward, run the following command:
+
+    $/home/deploy/ php deploy.php -site [sitename] -env [environment (testing | prod)] -rollback
+
+This command will remove the current release and revert back to a previous one. I only rolls back code changes, does not rollback any database changes.
+
+You can also rollback a setup this removes the code and any database and database user by running the following command:
+
+    $/home/deploy/ php deploy.php -site [sitename] -env [environment (testing | prod)] -setup -rollback
+

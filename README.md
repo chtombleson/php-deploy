@@ -1,7 +1,7 @@
 # PHP Deploy
 A simple php deployment system.
 
-This can be used to deploy websites for version control to a server in an automated way.
+This can be used to deploy websites from version control to a server in an automated way and also the ability of rolling back releases.
 
 ## Configuration
 To deploy a site using this tool you will need to create a directory for the site you want to deploy
@@ -19,9 +19,21 @@ Currently there is support for Git, Composer, Nginx, Apache, PostgreSQL and MySQ
 See INSTALL.md
 
 ## Usage
-    $cd php-deploy
-    $php deploy.php -site [sitename] -env [environment]
-    $php deploy.php --help
+Setup a site:
+
+    $/home/deploy/ php deploy.php -site [sitename] -env [testing | prod] -setup
+
+Updating a site:
+
+    $/home/deploy/ php deploy.php -site [sitname] -env [testing | prod]
+
+Rolling back an Update:
+
+    $/home/deploy/ php deploy.php -site [sitname] -env [testing | prod] -rollback
+
+Rolling back a Setup:
+
+    $/home/deply/ php deploy.php -site [sitename] -env [testing | prod] -setup -rollback
 
 ## License
 See LICENSE

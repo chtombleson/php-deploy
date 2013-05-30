@@ -51,5 +51,25 @@ class Postgresql {
         echo "Running command: " . $command . "\n";
         $cmd->run($command);
     }
+
+    public function rollback() {
+        $color = new \Colors\Color();
+        echo $color("Rolling back PostgreSQL Databse")->white->bold->bg_yellow . "\n";
+
+        // Remove database
+        $command = 'psql template1 -t -c "DROP DATABASE %s"';
+        $command = sprintf($command, $this->config['database']['name']);
+
+        echo "Running command: " . $command . "\n";
+        $cmd = new \Deploy\Command();
+        $cmd->run($command);
+
+        // Remove User
+        $command = 'psql template1 -c "DROP USER %s"';
+        $command = sprintf($command, $this->config['database']['username']);
+
+        echo "Running command: " . $command . "\n";
+        $cmd->run($command);
+    }
 }
 ?>

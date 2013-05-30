@@ -24,3 +24,8 @@ hooks:
     after_apache: "shell cmd" # After apache has parsed conf and before server reload
     after_deploy: ["shell cmd", "shell cmd"] # After deploymenr has finished
     after_composer: "shell cmd" # After composer has run
+    after_git_rollback: "shell cmd"
+    after_nginx_rollback: "shell cmd"
+    after_apache_rollback: "shell cmd"
+    after_rollback: "shell cmd"
+    after_composer_rollback: "shell cmd"

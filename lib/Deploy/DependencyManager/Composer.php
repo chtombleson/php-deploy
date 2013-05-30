@@ -27,7 +27,14 @@ class Composer {
             }
         }
 
-        if (!symlink($this->config['install']['dir'] . '/vendor', $this->config['install']['dir'] . '/current/vendor')) {
+        //if (!symlink($this->config['install']['dir'] . '/vendor', $this->config['install']['dir'] . '/current/vendor')) {
+        //    throw new \Exception("Unable to symlink vendors directory to current");
+        //}
+
+        $cmd = new \Deploy\Command();
+        $cmd->run('ln -s ' . $this->config['install']['dir'] . '/vendor ' . $this->config['install']['dir'] . '/current/vendor');
+
+        if (!file_exists($this->config['install']['dir'] . '/current/vendor')) {
             throw new \Exception("Unable to symlink vendors directory to current");
         }
 
@@ -54,6 +61,39 @@ class Composer {
                 echo $color("Executing Hooks, after_composer: " . $this->config['hooks']['after_composer'])->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
                 $cmd->run($this->config['hooks']['after_composer']);
+            }
+        }
+    }
+
+    public function rollback() {
+        $color = new \Colors\Color();
+        echo $color("Rolling back Composer")->white->bold->bg_yellow . "\n";
+
+        echo "Removing vendor directory\n";
+        $cmd = new \Deploy\Command();
+        $cmd->run('rm -r ' . $this->config['install']['dir'] . '/vendor/');
+        $cmd->run('rm ' . $this->config['install']['dir'] . '/current/vendor');
+
+        echo "Creating new vendor directory\n";
+        $cmd->run('mkdir ' . $this->config['install']['dir'] . '/vendor/');
+        $cmd->run('ln -s ' . $this->config['install']['dir'] . '/vendor/ ' . $this->config['install']['dir'] . '/current/vendor');
+
+        echo "Run composer install\n";
+        $cmd->run('composer install', $this->config['install']['dir'] . '/current/');
+
+        if (isset($this->config['hooks']['after_composer_rollback'])) {
+            if (is_array($this->config['hooks']['after_composer_rollback'])) {
+                echo $color("Executing Hooks, after_composer_rollback")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_composer_rollback'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                echo $color("Executing Hooks, after_composer_rollback: " . $this->config['hooks']['after_composer_rollback'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+                $cmd->run($this->config['hooks']['after_composer_rollback']);
             }
         }
     }

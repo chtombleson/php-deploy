@@ -59,6 +59,35 @@ class Apache {
         $cmd->run('apache2ctl graceful');
     }
 
+    public function rollback() {
+        $color = new \Colors\Color();
+        echo $color("Rolling back Apache")->white->bold->bg_yellow . "\n";
+
+        $cmd = new \Deploy\Command();
+        echo "Removing Apache config\n";
+        $cmd->run('rm /etc/apache2/sites-enabled/' . $this->site . '-' . $this->env . '.conf');
+        $cmd->run('rm /etc/apache2/sites-available/' . $this->site . '-' . $this->env . '.conf');
+
+        echo "Reloading Apache\n";
+        $cmd->run('apache2ctl graceful');
+
+        if (isset($this->config['hooks']['after_apache_rollback']) && !empty($this->config['hooks']['after_apache_rollback'])) {
+            if (is_array($this->config['hooks']['after_apache_rollback'])) {
+                echo $color("Executing Hook, after_apache_rollback")->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Command();
+
+                foreach ($this->config['hooks']['after_apache_rollback'] as $hook) {
+                    echo "Running command: " . $hook . "\n";
+                    $cmd->run($hook);
+                }
+            } else {
+                echo $color("Executing Hook, after_apache_rollback: " . $this->config['hooks']['after_apache_rollback'])->white->bold->bg_yellow . "\n";
+                $cmd = new \Deploy\Commad();
+                $cmd->run($this->config['hooks']['after_apache_rollback']);
+            }
+        }
+    }
+
     private function parseConf() {
         if (isset($this->config['webserver']['conf'])) {
             $conf = $this->config['webserver']['conf'];

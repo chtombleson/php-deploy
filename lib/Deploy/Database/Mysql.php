@@ -55,5 +55,29 @@ class Mysql {
         echo "Running command: " . $command . "\n";
         $cmd->run($command);
     }
+
+    public function rollback() {
+        $color = new \Colors\Color();
+        echo $color("Rolling back MySQL Database")->white->bold->bg_yellow . "\n";
+
+        $cli = new \FusePump\Cli\Inputs();
+        $mysqluser = $cli->prompt('MySQL user: ');
+        $mysqlpass = $cli->prompt('MySQL password: ');
+
+        // Remove Database
+        $command = 'mysql -u %s --password=%s -e "DROP DATABASE %s"';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['name']);
+
+        echo "Running command: " . $command . "\n";
+        $cmd = new \Deploy\Command();
+        $cmd->run($command);
+
+        // Remove User
+        $command = 'mysql -u %s --password=%s -e "DROP USER %s"';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['username']);
+
+        echo "Running command: " . $command . "\n";
+        $cmd->run($command);
+    }
 }
 ?>
