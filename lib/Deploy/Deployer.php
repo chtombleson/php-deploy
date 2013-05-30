@@ -132,7 +132,7 @@ class Deployer {
     }
 
     private function buildInstallDir() {
-        $structure = array('log', 'releases');
+        $structure = array('releases');
         $chmod = 0755;
 
         if (!mkdir($this->config['install']['dir'], $chmod)) {
