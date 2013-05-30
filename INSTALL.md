@@ -106,7 +106,7 @@ Rolling back a site to a previous release is straight forward, run the following
 
     $/home/deploy/ php deploy.php -site [sitename] -env [environment (testing | prod)] -rollback
 
-This command will remove the current release and revert back to a previous one. I only rolls back code changes, does not rollback any database changes.
+This command will remove the current release and revert back to a previous one. It only rolls back code changes, does not rollback any database changes.
 
 You can also rollback a setup this removes the code and any database and database user by running the following command:
 
