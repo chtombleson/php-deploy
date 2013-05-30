@@ -138,6 +138,7 @@ class Deployer {
                     $cmd = new \Deploy\Command();
 
                     foreach ($this->config['hooks']['after_deploy'] as $hook) {
+                        echo "Running command: " . $hook . "\n";
                         $cmd->run($hook);
                     }
                 } else {

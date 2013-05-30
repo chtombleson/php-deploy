@@ -72,7 +72,7 @@ class Mysql {
         $cmd->run($command);
 
         // Grant Privilliges
-        $command = 'mysql -u %s --password=%s -e "GRANT ALL ON %s.* TO %s IDENTIFIED BY %s"';
+        $command = 'mysql -u %s --password=%s -e "GRANT ALL ON %s.* TO %s@\'localhost\' IDENTIFIED BY \'%s\'"';
         $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['username'], $this->config['database']['name'], $this->config['database']['password']);
 
         echo "Running command: " . $command . "\n";
