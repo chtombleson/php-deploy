@@ -3,6 +3,7 @@
         "mustangostang/spyc": "0.5.1",
         "fusepump/cli.php": "0.5.2",
         "kevinlebrun/colors.php": "0.3.0",
-        "cpliakas/git-wrapper": "1.0.0-RC1"
+        "cpliakas/git-wrapper": "1.0.0-RC1",
+        "youknowriad/oossh": "dev-master"
     }
 }
