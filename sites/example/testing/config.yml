@@ -1,6 +1,7 @@
 version_control:
-    type: "git"
-    url: "git repo"
+    type: "git | svn"
+    url: "git | svn repo"
+    branch: "" # Optional only used for git, default is master
 
 install:
     dir: "directory to install site into"
