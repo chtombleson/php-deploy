@@ -159,17 +159,11 @@ class Deployer {
         $structure = array('releases');
         $chmod = 0755;
 
-        if (!mkdir($this->config['install']['dir'], $chmod)) {
-            throw new \Exception("Unable to create install dir " . $this->config['install']['dir']);
-        }
+        $cmd = new \Deploy\Command();
+        $command = sprintf('mkdir -p %s/%s', realpath($this->config['install']['dir']), implode('/', $structure));
 
-        foreach ($structure as $struct) {
-            $base = realpath($this->config['install']['dir']);
-
-            if (!mkdir($base . '/' . $struct, $chmod)) {
-                throw new \Exception("Unbale to create " . $base . "/" . $struct . " dir");
-            }
-        }
+        echo "Running Command: " . $command . "\n";
+        $cmd->run($command);
     }
 
     private function cleanReleases() {

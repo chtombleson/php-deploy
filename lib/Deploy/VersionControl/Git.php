@@ -129,7 +129,11 @@ class Git {
 
     private function cloneRepo() {
         if (!file_exists('/tmp/deployments/')) {
-            if (!mkdir('/tmp/deployments/', 0755)) {
+
+            $cmd = new \Deploy\Command();
+            $cmd->run('mkdir /tmp/deployments');
+
+            if (!file_exists('/tmp/deployments/')) {
                 throw new \Exception("Unabled to create directory: /tmp/deployments/");
             }
         }
@@ -137,59 +141,55 @@ class Git {
         $color = new \Colors\Color();
         echo $color("Cloning Git Repo: " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
 
-        $gitwrap = new\GitWrapper\GitWrapper();
-        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
-        $git->clone($this->config['version_control']['url']);
-        echo $git->getOutput();
+        $cmd = new \Deploy\Command('/tmp/deployments/');
+        $command = sprintf('git clone %s %s-%s', $this->config['version_control']['url'], $this->site, $this-env);
+        $cmd->run($command);
+
         $this->switchBranch();
     }
 
     private function switchBranch() {
         if ($this->getBranch() != $this->branch && !$this->branchExists()) {
             $color = new \Colors\Color();
-            $gitwrap = new \GitWrapper\GitWrapper();
             echo $color("Checkout branch: " . $this->branch . ", " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
-            $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
-            $git->checkout('origin/' . $this->branch, array('b' => $this->branch, 'track' => true));
-            echo $git->getOutput();
+
+            $cmd = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env);
+            $command = sprintf('git checkout -b %s --track origin/%s', $this->branch, $this->branch);
+            $cmd->run($command);
         }
 
         if ($this->branchExists() && $this->getBranch() != $this->branch) {
             $color = new \Colors\Color();
-            $gitwrap = new \GitWrapper\GitWrapper();
             echo $color("Checkout branch: " . $this->branch . ", " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
-            $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
-            $git->checkout($this->branch);
-            echo $git->getOutput();
+
+            $cmd = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env);
+            $cmd->run(sprintf('git checkout %s', $this->branch));
         }
     }
 
     private function updateRepo() {
-        $this->switchBranch();
         $color = new \Colors\Color();
-        $gitwrap = new \GitWrapper\GitWrapper();
         echo $color("Updating Git Repo: " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
-        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
         $this->switchBranch();
-        $git->pull();
-        echo $git->getOutput();
+
+        $cmd = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $cmd->run('git pull');
     }
 
     private function getBranch() {
-        $gitwrap = new \GitWrapper\GitWrapper();
-        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
-        $git->branch();
-        $output = $git->getOutput();
+        $cmd = \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $cmd->run('git branch', null, false);
 
+        $output = $cmd->getOutput();
         preg_match('#\*\s([a-z A-Z 0-9 \S]+)#', $output, $matches);
         return trim($matches[1]);
     }
 
     private function branchExists() {
-        $gitwrap = new \GitWrapper\GitWrapper();
-        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
-        $git->branch();
-        $output = $git->getOutput();
+        $cmd = \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $cmd->run('git branch', null, false);
+
+        $output = $cmd->getOutput();
 
         if (preg_match('#' . preg_quote($this->branch) . '#', $output)) {
             return true;
@@ -202,12 +202,11 @@ class Git {
         $color = new \Colors\Color();
         echo $color("Creating Git Archive")->white->bold->bg_yellow . "\n";
         $this->time = time();
-        //$cmd = 'git archive --format tar --prefix %d/ %s --output %s/releases/%s.tar.gz';
-        $cmd = 'git archive --format tar --prefix %d/ %s | gzip > %s/releases/%s.tar.gz';
-        $cmd = sprintf($cmd, $this->time, $this->branch, $this->config['install']['dir'], $this->site);
+        $command = 'git archive --format tar --prefix %d/ %s | gzip > %s/releases/%s.tar.gz';
+        $command = sprintf($command, $this->time, $this->branch, $this->config['install']['dir'], $this->site);
         echo "Running command: " . $cmd . "\n";
-        $command = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env . '/');
-        $command->run($cmd);
+        $cmd = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env . '/');
+        $cmd->run($command);
     }
 
     private function untar() {
@@ -223,11 +222,19 @@ class Git {
         $color = new \Colors\Color();
         echo $color("Symlinking release to current")->white->bold->bg_yellow . "\n";
 
-        if (file_exists($this->config['install']['dir'] . '/current')) {
-            unlink($this->config['install']['dir'] . '/current');
+        $release = $this->config['install']['dir'] . '/releases/' . $this->time;
+        $current = $this->config['install']['dir'] . '/current';
+
+        if (file_exists($current)) {
+            $cmd = new \Deploy\Command();
+            $cmd->run(sprintf('rm %s', $current));
         }
 
-        if (!symlink($this->config['install']['dir'] . '/releases/' . $this->time, $this->config['install']['dir'] . '/current')) {
+        $cmd = new \Deploy\Command();
+        $command = sprintf('ln -s %s %s', $release, $current);
+        $cmd->run($command);
+
+        if (readlink($current) != $release) {
             throw new \Exception("Unable to symlink release to current");
         }
     }
