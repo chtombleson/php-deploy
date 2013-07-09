@@ -128,7 +128,7 @@ class Deployer {
                 case 'apache':
                     echo $color("Reloading Apache: apache2ctl graceful")->white->bold->bg_yellow . "\n";
                     $cmd = new \Deploy\Command();
-                    $cmd->run('apach2ctl graceful');
+                    $cmd->run('apache2ctl graceful');
                     break;
             }
 
