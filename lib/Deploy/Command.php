@@ -26,11 +26,16 @@ namespace Deploy;
 
 class Command {
     protected $workingdir = './';
+    protected $ssh;
     protected $output;
 
-    public function __construct($workingdir = null) {
+    public function __construct($workingdir = null, $ssh = null) {
         if (!empty($workingdir)) {
             $this->setWorkingDir($workingdir);
+        }
+
+        if (!empty($ssh)) {
+            $this->setSsh($ssh);
         }
     }
 
@@ -46,9 +51,21 @@ class Command {
         return $this->workingdir;
     }
 
-    public function run($cmd, $workingdir = null, $output = true, $escape = false) {
+    public function setSsh($ssh) {
+        $this->ssh = $ssh;
+    }
+
+    public function getSsh() {
+        return $this->ssh;
+    }
+
+    public function run($cmd, $workingdir = null, $ssh = null, $output = true, $escape = false) {
         if (!empty($workingdir)) {
             $this->setWorkingDir($workingdir);
+        }
+
+        if (!empty($ssh)) {
+            $this->setSsh($ssh);
         }
 
         if ($escape) {
@@ -60,6 +77,10 @@ class Command {
             1 => array('pipe', 'w'),
             2 => array('pipe', 'r'),
         );
+
+        if (!empty($this->ssh)) {
+            $cmd = $this->getSsh() . ' \'' . $cmd . '\'';
+        }
 
         $process = proc_open($cmd, $spec, $pipes, $this->getWorkingDir());
 
