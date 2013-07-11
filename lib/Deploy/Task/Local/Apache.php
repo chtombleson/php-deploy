@@ -22,7 +22,7 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Deploy\WebServer;
+namespace Deploy\Task\Local;
 
 class Apache {
     protected $site;

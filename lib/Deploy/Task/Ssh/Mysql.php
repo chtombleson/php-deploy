@@ -22,17 +22,17 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Deploy\Database;
+namespace Deploy\Task\Ssh;
 
-class Postgresql {
+class Mysql {
     private $config;
 
     public function __construct($config) {
         $this->config = $config;
-        $psql = exec('which psql');
+        $mysql = exec('which mysql');
 
-        if (empty($psql)) {
-            throw new \Exception("Please install PostgreSQL");
+        if (empty($mysql)) {
+            throw new \Exception("Please install MySQL");
         }
 
         if (!isset($this->config['database']['name'])) {
@@ -50,26 +50,30 @@ class Postgresql {
 
     public function run() {
         $color = new \Colors\Color();
-        echo $color("Setting up PostgreSQL Database")->white->bold->bg_yellow . "\n";
+        echo $color("Setting up MySQL Database")->white->bold->bg_yellow . "\n";
+
+        $cli = new \FusePump\Cli\Inputs();
+        $mysqluser = $cli->prompt('MySQL user: ');
+        $mysqlpass = $cli->prompt('MySQL password: ');
 
         // Create User
-        $command = 'psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname=\'%s\'" | grep -q 1 || psql template1 -c "CREATE USER %s WITH PASSWORD \'%s\'"';
-        $command = sprintf($command, $this->config['database']['username'], $this->config['database']['username'], $this->config['database']['password']);
+        $command = 'mysql -u %s --password=%s -e "SELECT 1 FROM mysql.user WHERE User=\'%s\'" | grep -q 1 || mysql -u %s --password=%s -e "CREATE USER %s IDENTIFIED BY \'%s\'';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['username'], $mysqluser, $mysqlpass, $this->config['database']['username'], $this->config['database']['password']);
 
         echo "Running command: " . $command . "\n";
         $cmd = new \Deploy\Command();
         $cmd->run($command);
 
-        // Create Database
-        $command = 'psql template1 -t -c "SELECT 1 FROM pg_catalog.pg_database WHERE datname = \'%s\'" | grep -q 1 || psql template1 -t -c "CREATE DATABASE %s WITH OWNER %s"';
-        $command = sprintf($command, $this->config['database']['name'], $this->config['database']['name'], $this->config['database']['username']);
+        //Create Database
+        $command = 'mysql -u %s --password=%s -e "SHOW DATABASES LIKE \'%s\'" | grep -q %s || mysql -u %s --password=%s -e "CREATE DATABASE %s"';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['name'], $this->config['database']['name'], $mysqluser, $mysqlpass, $this->config['database']['name']);
 
         echo "Running command: " . $command . "\n";
         $cmd->run($command);
 
-        // Grant Privilleges
-        $command = 'psql template1 -c "GRANT ALL PRIVILEGES ON DATABASE %s to %s"';
-        $command = sprintf($command, $this->config['database']['name'], $this->config['database']['username']);
+        // Grant Privilliges
+        $command = 'mysql -u %s --password=%s -e "GRANT ALL ON %s.* TO \'%s\'@\'localhost\' IDENTIFIED BY \'%s\'"';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['name'], $this->config['database']['username'], $this->config['database']['password']);
 
         echo "Running command: " . $command . "\n";
         $cmd->run($command);
@@ -77,19 +81,23 @@ class Postgresql {
 
     public function rollback() {
         $color = new \Colors\Color();
-        echo $color("Rolling back PostgreSQL Databse")->white->bold->bg_yellow . "\n";
+        echo $color("Rolling back MySQL Database")->white->bold->bg_yellow . "\n";
 
-        // Remove database
-        $command = 'psql template1 -t -c "DROP DATABASE %s"';
-        $command = sprintf($command, $this->config['database']['name']);
+        $cli = new \FusePump\Cli\Inputs();
+        $mysqluser = $cli->prompt('MySQL user: ');
+        $mysqlpass = $cli->prompt('MySQL password: ');
+
+        // Remove Database
+        $command = 'mysql -u %s --password=%s -e "DROP DATABASE %s"';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['name']);
 
         echo "Running command: " . $command . "\n";
         $cmd = new \Deploy\Command();
         $cmd->run($command);
 
         // Remove User
-        $command = 'psql template1 -c "DROP USER %s"';
-        $command = sprintf($command, $this->config['database']['username']);
+        $command = 'mysql -u %s --password=%s -e "DROP USER %s"';
+        $command = sprintf($command, $mysqluser, $mysqlpass, $this->config['database']['username']);
 
         echo "Running command: " . $command . "\n";
         $cmd->run($command);

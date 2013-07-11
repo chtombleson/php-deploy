@@ -22,9 +22,9 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Deploy\VersionControl;
+namespace Deploy\Task\Local;
 
-class Svn {
+class Git {
     protected $site;
     protected $env;
     protected $branch;
@@ -35,14 +35,20 @@ class Svn {
         $this->config = $config;
         $this->site = $site;
         $this->env = $env;
-        $svn = exec('which svn');
+        $git = exec('which git');
 
-        if (empty($svn)) {
-            throw new \Exception("Please install Subversion (SVN)");
+        if (empty($git)) {
+            throw new \Exception("Please install Git");
         }
 
         if (!isset($this->config['version_control']['url'])) {
-            throw new \Exception("No URL for the svn repo was set in the config file");
+            throw new \Exception("No URL for the git repo was set in the config file");
+        }
+
+        if (!isset($this->config['version_control']['branch'])) {
+            $this->branch = 'master';
+        } else {
+            $this->branch = $this->config['version_control']['branch'];
         }
     }
 
@@ -57,21 +63,21 @@ class Svn {
         $this->untar();
         $this->setCurrent();
 
-        if (isset($this->config['hooks']['after_svn'])) {
-            if (is_array($this->config['hooks']['after_svn'])) {
+        if (isset($this->config['hooks']['after_git'])) {
+            if (is_array($this->config['hooks']['after_git'])) {
                 $color = new \Colors\Color();
-                echo $color("Executing Hook, after_svn")->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_git")->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
 
-                foreach ($this->config['hooks']['after_svn'] as $hook) {
+                foreach ($this->config['hooks']['after_git'] as $hook) {
                     echo "Running command: " . $hook . "\n";
                     $cmd->run($hook);
                 }
             } else {
                 $color = new \Colors\Color();
-                echo $color("Executing Hook, after_svn: " . $this->config['hooks']['after_svn'])->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_git: " . $this->config['hooks']['after_git'])->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
-                $cmd->run($this->config['hooks']['after_svn']);
+                $cmd->run($this->config['hooks']['after_git']);
             }
         }
     }
@@ -102,21 +108,21 @@ class Svn {
         echo "Removing rollbacked release\n";
         $cmd->run('rm -r ' . $currelease);
 
-        if (isset($this->config['hooks']['after_svn_rollback'])) {
-            if (is_array($this->config['hooks']['after_svn_rollback'])) {
+        if (isset($this->config['hooks']['after_git_rollback'])) {
+            if (is_array($this->config['hooks']['after_git_rollback'])) {
                 $color = new \Colors\Color();
-                echo $color("Executing Hook, after_svn_rollback")->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_git_rollback")->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
 
-                foreach ($this->config['hooks']['after_svn_rollback'] as $hook) {
+                foreach ($this->config['hooks']['after_git_rollback'] as $hook) {
                     echo "Running command: " . $hook . "\n";
                     $cmd->run($hook);
                 }
             } else {
                 $color = new \Colors\Color();
-                echo $color("Executing Hook, after_svn_rollback: " . $this->config['hooks']['after_svn_rollback'])->white->bold->bg_yellow . "\n";
+                echo $color("Executing Hook, after_git_rollback: " . $this->config['hooks']['after_git_rollback'])->white->bold->bg_yellow . "\n";
                 $cmd = new \Deploy\Command();
-                $cmd->run($this->config['hooks']['after_svn_rollback']);
+                $cmd->run($this->config['hooks']['after_git_rollback']);
             }
         }
     }
@@ -129,26 +135,76 @@ class Svn {
         }
 
         $color = new \Colors\Color();
-        echo $color("Cloning SVN Repo: " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
+        echo $color("Cloning Git Repo: " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
 
-        $cmd = new \Deploy\Command('/tmp/deployments/');
-        $cmd->run(sprintf('svn checkout %s %s', $this->config['version_control']['url'], $this->site . '-' . $this->env));
+        $gitwrap = new\GitWrapper\GitWrapper();
+        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $git->clone($this->config['version_control']['url']);
+        echo $git->getOutput();
+        $this->switchBranch();
+    }
+
+    private function switchBranch() {
+        if ($this->getBranch() != $this->branch && !$this->branchExists()) {
+            $color = new \Colors\Color();
+            $gitwrap = new \GitWrapper\GitWrapper();
+            echo $color("Checkout branch: " . $this->branch . ", " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
+            $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
+            $git->checkout('origin/' . $this->branch, array('b' => $this->branch, 'track' => true));
+            echo $git->getOutput();
+        }
+
+        if ($this->branchExists() && $this->getBranch() != $this->branch) {
+            $color = new \Colors\Color();
+            $gitwrap = new \GitWrapper\GitWrapper();
+            echo $color("Checkout branch: " . $this->branch . ", " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
+            $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
+            $git->checkout($this->branch);
+            echo $git->getOutput();
+        }
     }
 
     private function updateRepo() {
+        $this->switchBranch();
         $color = new \Colors\Color();
-        echo $color("Updating SVN Repo: " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
+        $gitwrap = new \GitWrapper\GitWrapper();
+        echo $color("Updating Git Repo: " . $this->config['version_control']['url'])->white->bold->bg_yellow . "\n";
+        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $this->switchBranch();
+        $git->pull();
+        echo $git->getOutput();
+    }
 
-        $cmd = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env);
-        $cmd->run('svn update');
+    private function getBranch() {
+        $gitwrap = new \GitWrapper\GitWrapper();
+        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $git->branch();
+        $output = $git->getOutput();
+
+        preg_match('#\*\s([a-z A-Z 0-9 \S]+)#', $output, $matches);
+        return trim($matches[1]);
+    }
+
+    private function branchExists() {
+        $gitwrap = new \GitWrapper\GitWrapper();
+        $git = $gitwrap->workingCopy('/tmp/deployments/' . $this->site . '-' . $this->env);
+        $git->branch();
+        $output = $git->getOutput();
+
+        if (preg_match('#' . preg_quote($this->branch) . '#', $output)) {
+            return true;
+        }
+
+        return false;
     }
 
     private function getArchive() {
         $color = new \Colors\Color();
         echo $color("Creating Git Archive")->white->bold->bg_yellow . "\n";
         $this->time = time();
-        $cmd = 'tar zcvf --exclude=".svn" --transform "s/^\./%s/" %s/releases/%s.tar.gz .';
-        $cmd = sprintf($cmd, $this->time, $this->config['install']['dir'], $this->site);
+        //$cmd = 'git archive --format tar --prefix %d/ %s --output %s/releases/%s.tar.gz';
+        $cmd = 'git archive --format tar --prefix %d/ %s | gzip > %s/releases/%s.tar.gz';
+        $cmd = sprintf($cmd, $this->time, $this->branch, $this->config['install']['dir'], $this->site);
         echo "Running command: " . $cmd . "\n";
         $command = new \Deploy\Command('/tmp/deployments/' . $this->site . '-' . $this->env . '/');
         $command->run($cmd);

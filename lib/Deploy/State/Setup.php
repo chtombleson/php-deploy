@@ -22,46 +22,57 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Deploy;
+namespace Deploy\State;
 
-class Deployer {
+class Setup {
     protected $site;
     protected $env;
     protected $config;
-    protected $setup;
-    protected $rollback;
 
-    public function __construct($site, $env, $config = null, $setup = false, $rollback = false) {
+    public function __construct($site, $env, $config = null) {
         $conf = new Config($site, $env, $config);
         $this->config = $conf->get();
         $this->site = $site;
         $this->env = $env;
-        $this->setup = $setup;
-        $this->rollback = $rollback;
     }
 
     public function run() {
-        $color = new \Colors\Color();
-        $cli = new \FusePump\Cli\Inputs();
-
-        echo $color('Starting deployment of site: ' . $this->site . ', environment: ' . $this->env)->white->bold->bg_green . "\n";
-        if ($cli->confirm('Are you sure you want to deploy this site [y/n]? ')) {
-            if (!empty($this->setup) && !empty($this->rollback)) {
-                $deploy = new Deploy\State\RollbackSetup();
-            } else if (!empty($this->rollback)) {
-                $deploy = new Deploy\State\RollbackUpdate();
-            } else if (!empty($this->setup)) {
-                $deploy = new Deploy\State\Setup();
-            } else {
-                $deploy = new Deploy\State\Update();
-            }
-
-            $deploy->run();
-
-            echo $color('Finished deployment of site: ' . $this->site . ', environment: ' . $this->env)->white->bold->bg_green . "\n";
+        if (!isset($this->config['setup']['tasks'])) {
+            throw new \Exception("No setup task were defined in your config.yml file");
         } else {
-            echo $color('Deployment of site: ' . $this->site . ', environment: ' . $this->env . ' was abandoned')->white->bold->bg_yellow . "\n";
+            if (isset($this->config['global']['ssh'])) {
+                $this->buildInstallDir(true);
+                $base = 'Deploy\Task\Ssh\\\\';
+
+                foreach ($this->config['setup']['tasks'] as $task => $conf) {
+                    $class = $base . ucfirst($task);
+                    $task = new $class($this->config);
+                    $task->setup();
+                }
+            } else {
+                $this->buildInstallDir();
+                $base = 'Deploy\Task\Local\\\\';
+
+                foreach ($this->config['setup']['tasks'] as $task => $conf) {
+                    $class = $base . ucfirst($task);
+                    $task = new $class($this->config);
+                    $task->setup();
+                }
+            }
         }
+    }
+
+    private function buildInstallDir($ssh = null) {
+        $structure = array('releases');
+
+        if (!empty($ssh)) {
+            $cmd = new Deploy\Task\Ssh\Command();
+        } else {
+            $cmd = new Deploy\Task\Local\Command();
+        }
+
+        $command = sprintf('mkdir -p %s/%s', $webroot, implode('/', $structure));
+        $cmd->run($command);
     }
 }
 ?>

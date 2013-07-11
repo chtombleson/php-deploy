@@ -1,32 +1,44 @@
-version_control:
-    type: "git | svn"
-    url: "git | svn repo"
-    branch: "" # Optional only used for git, default is master
+global:
+    install_dir: /var/www/test_sites/test
 
-install:
-    dir: "directory to install site into"
+setup:
+    tasks:
+        git:
+            repo: git@github.com:test.git
+            tmp_dir: /tmp/deployments
+        postgres:
+            database: test
+            username: test
+            password: test
+            host: localhost
+        nginx:
+            server_name: test.example.com
+            error_log: /var/log/sitelogs/test/nginx.error.log
+            access_log: /var/log/sitelogs/test/nginx.access.log
 
-webserver:
-    type: "nginx | apache"
-    servername: "domain name for site"
+update:
+    tasks:
+        git:
+            repo: git@github.com.com:test.git
+            tmp_dir: /tmp/deployments
 
-dependency_manager:
-    type: "composer"
+rollback-update:
+    tasks:
+        git:
+            repo: git@github.com:test.git
+            tmp_dir: /tmp/deployments
 
-database:
-    type: "postgresql | mysql"
-    name: "db name"
-    username: "db user"
-    password: "db password"
-
-hooks:
-    after_git: "shell cmd" # After all git commands have been run
-    after_nginx: "shell cmd" # After nginx has parsed conf and before server reload
-    after_apache: "shell cmd" # After apache has parsed conf and before server reload
-    after_deploy: ["shell cmd", "shell cmd"] # After deploymenr has finished
-    after_composer: "shell cmd" # After composer has run
-    after_git_rollback: "shell cmd"
-    after_nginx_rollback: "shell cmd"
-    after_apache_rollback: "shell cmd"
-    after_rollback: "shell cmd"
-    after_composer_rollback: "shell cmd"
+rollback-setup:
+    tasks:
+        git:
+            repo: git@github.com:test.git
+            tmp_dir: /tmp/deployments
+        postgres:
+            database: test
+            username: test
+            password: test
+            host: localhost
+        nginx:
+            server_name: test.example.com
+            error_log: /var/log/sitelogs/test/nginx.error.log
+            access_log: /var/log/sitelogs/test/nginx.access.log

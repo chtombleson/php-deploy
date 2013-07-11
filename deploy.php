@@ -65,14 +65,8 @@ if (!in_array($cli->get('-env'), $allowed_envs)) {
 }
 
 try {
-    $dorollback = $cli->get('-rollback');
-    if (!empty($dorollback)) {
-        $rollback = new Deploy\Rollback($cli->get('-site'), $cli->get('-env'), $cli->get('-config'), $cli->get('-setup'));
-        $rollback->run();
-    } else {
-        $deployer = new Deploy\Deployer($cli->get('-site'), $cli->get('-env'), $cli->get('-config'), $cli->get('-setup'));
-        $deployer->run();
-    }
+    $deployer = new Deploy\Deployer($cli->get('-site'), $cli->get('-env'), $cli->get('-config'), $cli->get('-setup'), $cli->get('-rollback'));
+    $deployer->run();
 } catch (Exception $e) {
     echo $color("Error: " . $e->getMessage())->white->bold->bg_red . "\n";
     echo $color("Deployment Failed!!!")->white->bold->bg_red . "\n";

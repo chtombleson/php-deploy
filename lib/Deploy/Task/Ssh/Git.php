@@ -22,7 +22,7 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 */
-namespace Deploy\VersionControl;
+namespace Deploy\Task\Ssh;
 
 class Git {
     protected $site;

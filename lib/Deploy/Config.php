@@ -64,16 +64,22 @@ class Config {
     private function loadConf() {
         $yaml = \Spyc::YAMLLoad($this->conf_file);
 
-        if (!isset($yaml['version_control'])) {
-            throw new \Exception("Config requires version control information");
+        if (!isset($yaml['setup'])) {
+            throw new \Exception("Config requires setup tasks");
         }
 
-        if (!isset($yaml['install'])) {
-            throw new \Exception("Config requires install information");
+        if (!isset($yaml['update'])) {
+            throw new \Exception("Config requires update tasks");
         }
 
-        if (!isset($yaml['webserver'])) {
-            throw new \Exception("Config requires webserver information");
+        if (!isset($yaml['global'])) {
+            $yaml['global'] = array(
+                'install_dir' => '/var/www/' . $this->site . '-' . $this->env,
+            );
+        } else if (!isset($yaml['global']['install_dir'])) {
+            $yaml['global']['install_dir'] = '/var/www/' . $this->site . '-' . $this->env;
+        } else if (isset($yaml['global']['install_dir'])) {
+            $yaml['global']['install_dir'] = realpath($yaml['global']['install_dir']);
         }
 
         $this->config = $yaml;
